@@ -24,10 +24,10 @@ void setup(){
     pinMode(LED_PIN1, OUTPUT);
     pinMode(LED_PIN2, OUTPUT);
     
-    RTsched::begin();
+    RTevents::begin();
 
-    RTsched::addTask(&flash1, 0, 500);
-    RTsched::addTask(&flash2, 0, 50);
+    RTevents::addTask(&flash1, 0, 500);
+    RTevents::addTask(&flash2, 0, 50);
     
 }
 

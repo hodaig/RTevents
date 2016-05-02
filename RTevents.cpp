@@ -8,17 +8,16 @@
 #include "RTevents.h"
 
 /* constants */
-#ifdef ARDUINO
 #define RT_MAX_MILLIS       0xFFFFFFFF
-#else
-#define RT_MAX_MILLIS       0xFFFFFFFFFFFFFFFF
-#endif
-/* flags */
-#define RT_FLAG_ACTIVE   1      // without this flag the task is not scheduled
-#define RT_FLAG_USED     2
-#define RT_FLAG_ONE_TIME 4      // if set, this task will occur once and removed
-#define RT_FLAG_OVERFLOW 8      // the next occurrence is after the counter is overflow ( > 2^32)
 
+/* flags */
+#define RT_FLAG_ACTIVE     1      // without this flag the task is not scheduled
+#define RT_FLAG_USED       2
+#define RT_FLAG_ONE_TIME   4      // if set, this task will occur once and removed
+#define RT_FLAG_OVERFLOW   8      // the next occurrence is after the counter is overflow ( > 2^32)
+#define RT_FLAG_NESTED     16     // this task can be called nested - TODO - in development, don't use!
+
+/* macros */
 #define RT_FLAG_ADD(var, flag) var = (var | (flag))
 #define RT_FLAG_DEL(var, flag) var = (var & ~flag)
 #define RT_CHECK_FLAG(var, flag) (var & flag)
@@ -30,12 +29,12 @@
 #endif
 
 /* static variables */
-RTtask RTsched::_tasksQueue[RT_QUEUE_SIZE];
-unsigned long RTsched::_curentNextIntrerupt;
-bool RTsched::_interuptIsActivale;
+RTtask RTevents::_tasksQueue[RT_QUEUE_SIZE];
+unsigned long RTevents::_curentNextIntrerupt;
+bool RTevents::_interuptIsActivale;
     
 
-void RTsched::begin(){
+void RTevents::begin(){
     _curentNextIntrerupt = RT_MAX_MILLIS;
     _interuptIsActivale = false;
     memset(&_tasksQueue, 0x0, sizeof(_tasksQueue));
@@ -43,7 +42,7 @@ void RTsched::begin(){
 
 }
 
-uint8_t RTsched::addTask(RTfunc func, long delay, uint16_t period){
+uint8_t RTevents::addTask(RTfunc func, long delay, uint16_t period){
     // basic validation
     if (delay < 0 || delay > RT_MAX_DELAY ||
                 period < 0 || period > RT_MAX_PERIOD){
@@ -85,7 +84,7 @@ uint8_t RTsched::addTask(RTfunc func, long delay, uint16_t period){
     return 0;
 }
 
-bool RTsched::removeTask(uint8_t taskID){
+bool RTevents::removeTask(uint8_t taskID){
     if (taskID < 0 || taskID >= RT_QUEUE_SIZE) {
         return false;
     }
@@ -93,17 +92,17 @@ bool RTsched::removeTask(uint8_t taskID){
     return true;
 }
 
-void RTsched::RTattachInterrupt(unsigned long delay){
+void RTevents::RTattachInterrupt(unsigned long delay){
 
     _interuptIsActivale = true;
     _curentNextIntrerupt = millis() + delay;
 
-    MsTimer2::set(delay, RTsched::RTinteruptHandler);
+    MsTimer2::set(delay, RTevents::RTinteruptHandler);
     MsTimer2::start();
 
 }
 
-void RTsched::RTdeAttachInterrupt(){
+void RTevents::RTdeAttachInterrupt(){
 
     _interuptIsActivale = false;
     _curentNextIntrerupt = RT_MAX_MILLIS;
@@ -112,7 +111,7 @@ void RTsched::RTdeAttachInterrupt(){
 
 }
 
-void RTsched::RTinteruptHandler(){
+void RTevents::RTinteruptHandler(){
     unsigned long nextInterrupt = RT_MAX_MILLIS;
     unsigned long localMillis;
     // TODO - make 'i' static to solve starvation problems
@@ -147,16 +146,18 @@ void RTsched::RTinteruptHandler(){
     }
 }
 
-void RTsched::RTexecuteTask(RTtask* theTask){
+void RTevents::RTexecuteTask(RTtask* theTask){
     RTfunc func = theTask->func;
 
     // halt next execution of this task
     RT_FLAG_DEL(theTask->flags, RT_FLAG_ACTIVE);
 
-    // execute the task
-    //sei(); // TODO - allow nested interupt 
+    if (RT_CHECK_FLAG(theTask->flags, RT_FLAG_NESTED)) {
+    	sei(); // TODO - allow nested interupt
+    }
+    
+    // execute the task 
     func();
-
 
     // check if this task was deleted
     if (func != theTask->func ||
