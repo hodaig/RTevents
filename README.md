@@ -1,7 +1,7 @@
 # RTevents
 Arduino library for schedule multiple number of independent task after constant delay or period
 
-## sammary
+## summary
 this library make use of the hardware timer2 of the arduino device to schedule multiple RT tasks.
 
 - can easily replace the use of the standard delay (no waste of CPU)
