@@ -1,5 +1,5 @@
 /*
- * RTsched.h
+ * RTevents.h
  *
  *  Created on: Apr 29, 2016
  *      Author: hodai
@@ -17,8 +17,8 @@
 #include "MsTimer2.h"
 
 /* constants */
-#define RT_MAX_DELAY        0xFFFF      // 65536 ms ~~ 1hour
-#define RT_MAX_PERIOD       0xFFFF      // 65536 ms ~~ 1hour
+#define RT_MAX_DELAY        0xFFFF      // 65536-ms ~~ 1-minute
+#define RT_MAX_PERIOD       0xFFFF      // 65536-ms ~~ 1-minute
 
 // change this to the expected maximum number of task at the same time
 // each task take sizeof(RTtask) bytes of RAM (9byte)

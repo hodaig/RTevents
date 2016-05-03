@@ -1,5 +1,5 @@
 /*
- * RTsched.cpp
+ * RTevents.cpp
  *
  *  Created on: Apr 29, 2016
  *      Author: hodai
@@ -8,7 +8,7 @@
 #include "RTevents.h"
 
 /* constants */
-#define RT_MAX_MILLIS       0xFFFFFFFF
+#define RT_MAX_MILLIS       0xFFFFFFFF  // ~50 days
 
 /* flags */
 #define RT_FLAG_ACTIVE     1      // without this flag the task is not scheduled
