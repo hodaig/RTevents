@@ -16,6 +16,9 @@
 
 #include "MsTimer2.h"
 
+// un-commernt this to use less memory - TODO - experimental mode
+// #define RT_LITE_MEM_MODE
+
 /* constants */
 #define RT_MAX_DELAY        0xFFFF      // 65536-ms ~~ 1-minute
 #define RT_MAX_PERIOD       0xFFFF      // 65536-ms ~~ 1-minute
@@ -26,41 +29,60 @@
 
 
 /* public types */
-typedef void (*RTfunc) (void);
+typedef void (*RTfunc_t) (void);
 
 
 /* internal tasks struct */
 typedef struct {
-    RTfunc func;                      // void (*func) (void);
+    RTfunc_t func;                      // void (*func) (void);
+#ifdef RT_LITE_MEM_MODE
+    uint16_t leftForNextOccur;        // the time left till the next execution
+#else
     unsigned long nextOccurrence;     // the next time this task will execute
+#endif
     uint8_t flags;                    // see:  RT_FLAG_...
     uint16_t period;                  // time in milliseconds before every occurrence
-} RTtask;
+} RTtask_t;
 
 
 class RTevents {
 private:
-    static RTtask _tasksQueue[RT_QUEUE_SIZE];
+
+    static RTtask_t _tasksQueue[RT_QUEUE_SIZE];
+
     static unsigned long _curentNextIntrerupt;
+
+#ifdef RT_LITE_MEM_MODE
+    static unsigned long _lastUpdate;
+#endif
+
     static bool _interuptIsActivale;
 
 public:
 
     static void begin();
 
-    static uint8_t addTask(RTfunc func, long delay, uint16_t period);
+#ifdef RT_LITE_MEM_MODE
+    static uint8_t addTask(RTfunc_t func, uint16_t delay, uint16_t period);
+#else
+    static uint8_t addTask(RTfunc_t func, unsigned long delay, uint16_t period);
+#endif
 
     static bool removeTask(uint8_t taskID);
 
 private:
 
+#ifdef RT_LITE_MEM_MODE
+    static void RTattachInterrupt(uint16_t delay);
+#else
     static void RTattachInterrupt(unsigned long delay);
+#endif
 
-    static void RTdeAttachInterrupt();
+    static void RTdetachInterrupt();
 
     static void RTinteruptHandler();
 
-    static void RTexecuteTask(RTtask* theTask);
+    static void RTexecuteTask(RTtask_t* theTask);
 };
 
 #endif /* _RTEVENTS_H_ */
