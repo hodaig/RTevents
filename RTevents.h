@@ -14,14 +14,17 @@
 #include <Arduino.h>
 #endif
 
-#include "MsTimer2.h"
 
 // un-commernt this to use less memory - TODO - experimental mode
 // #define RT_LITE_MEM_MODE
 
 /* constants */
-#define RT_MAX_DELAY        0xFFFF      // 65536-ms ~~ 1-minute
-#define RT_MAX_PERIOD       0xFFFF      // 65536-ms ~~ 1-minute
+#ifdef RT_LITE_MEM_MODE
+# define RT_MAX_DELAY        0xFFFF
+#else
+# define RT_MAX_DELAY        0xEFFFFFFF
+#endif
+#define RT_MAX_PERIOD       0xFFFF
 
 // change this to the expected maximum number of task at the same time
 // each task take sizeof(RTtask) bytes of RAM (9byte)
@@ -35,12 +38,13 @@ typedef void (*RTfunc_t) (void);
 /* internal tasks struct */
 typedef struct {
     RTfunc_t func;                      // void (*func) (void);
+    uint8_t flags;                    // see:  RT_FLAG_...
+
 #ifdef RT_LITE_MEM_MODE
     uint16_t leftForNextOccur;        // the time left till the next execution
 #else
     unsigned long nextOccurrence;     // the next time this task will execute
 #endif
-    uint8_t flags;                    // see:  RT_FLAG_...
     uint16_t period;                  // time in milliseconds before every occurrence
 } RTtask_t;
 

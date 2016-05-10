@@ -6,6 +6,7 @@
  */
 
 #include "RTevents.h"
+#include "RTtimer.h"
 
 /* constants */
 #define RT_MAX_MILLIS       0xFFFFFFFF  // ~50 days
@@ -53,7 +54,11 @@ void RTevents::begin(){
 #endif
 
     memset(&_tasksQueue, 0x0, sizeof(_tasksQueue));
-    // TODO - change to direct use of the timer (define the timer and attach the interrupt handler here)
+
+    // define the timer and attach the interrupt handler
+    RTtimer_begin();
+    RTtimer_stop();
+    RTtimer_attachInterrupt(RTevents::RTinteruptHandler);
 
 }
 
@@ -128,8 +133,7 @@ void RTevents::RTattachInterrupt(unsigned long delay){
     _interuptIsActivale = true;
     _curentNextIntrerupt = millis() + delay;
 
-    MsTimer2::set(delay, RTevents::RTinteruptHandler);
-    MsTimer2::start();
+    RTtimer_schedNext_us(delay*1000);
 
 }
 
@@ -138,7 +142,7 @@ void RTevents::RTdetachInterrupt(){
     _interuptIsActivale = false;
     _curentNextIntrerupt = RT_MAX_MILLIS;
 
-    MsTimer2::stop();
+    RTtimer_stop();
 
 }
 
