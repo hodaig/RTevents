@@ -1,9 +1,8 @@
 
-#include <MsTimer2.h>
 #include <RTevents.h>
 
-#define LED_PIN1 13
-#define LED_PIN2 2
+#define LED_PIN1 9
+#define LED_PIN2 10
 
 void flash1() {
   static boolean output = HIGH;
@@ -26,8 +25,8 @@ void setup(){
     
     RTevents::begin();
 
-    RTevents::addTask(&flash1, 0, 500);
-    RTevents::addTask(&flash2, 0, 50);
+    RTevents::addTask(&flash1, 0, 5000);
+    RTevents::addTask(&flash2, 0, 500);
     
 }
 
