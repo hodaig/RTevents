@@ -13,7 +13,6 @@
 #endif
 
 
-#define RT_TIMER_AUTOSTOP
 #define RT_TIMER_RESOLUTION 0xFFFF
 
 
@@ -22,7 +21,7 @@
 #define RT_TIMER_STI() SREG = RTtimer_oldSREG;
 
 uint8_t RTtimer_oldSREG;
-void (*RTtimer_isr)();
+void (* volatile RTtimer_isr)();
 
 __inline__ void RTtimer_begin(){
     TCCR1A = 0;                 // clear control register A
@@ -40,6 +39,8 @@ __inline__ void RTtimer_schedNext_us(unsigned long us){
 
     uint8_t clockSelectBits;
 
+    if (us == 0) us = 1;
+
     long ocr = (F_CPU / 1000000) * us;                                          // num of tics needed
     if(ocr < RT_TIMER_RESOLUTION)              clockSelectBits = _BV(CS10);              // no prescale, full xtal
     else if((ocr >>= 3) < RT_TIMER_RESOLUTION) clockSelectBits = _BV(CS11);              // prescale by /8
@@ -49,18 +50,19 @@ __inline__ void RTtimer_schedNext_us(unsigned long us){
     else        ocr = RT_TIMER_RESOLUTION - 1, clockSelectBits = _BV(CS12) | _BV(CS10);  // request was out of bounds, set as maximum
 
     RT_TIMER_CLI();                              // Disable interrupts for 16 bit register access
-    TCCR1B = _BV(WGM12) | clockSelectBits;       // reset clock select register, and starts the clock
     OCR1A = ocr;
     TCNT1 = 0;                                   // start from 0
+    TCCR1B = _BV(WGM12) | clockSelectBits;       // reset clock select register, and starts the clock
     RT_TIMER_STI();
 
 }
 
 __inline__ void RTtimer_stop(){
     TCCR1B = 0;
+    OCR1A = 0xEFFF;
 }
 
-ISR(TIMER1_COMPA_vect, ISR_NOBLOCK) {
+ISR(TIMER1_COMPA_vect) {
 #ifdef RT_TIMER_AUTOSTOP
     RTtimer_stop();
 #endif
